@@ -1,0 +1,26 @@
+# Ignore build folders
+bin/
+obj/
+node_modules/
+
+# Ignore user-specific files
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.sqlite-shm
+*sqlite-wal
+
+# Ignore build outputs
+*.dll
+*.exe
+*.pdb
+*.appx
+*.appxbundle
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
