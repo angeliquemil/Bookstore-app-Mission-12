@@ -1,162 +1,222 @@
-import { useEffect, useState } from 'react';
-import { Book } from '../types/Book';
-import './Booklist.css';
-import AddToCartPopup from './AddToCartPopup';
+import { useEffect, useState } from 'react'
+import type { Book } from '../types/Book'
+import { useCart } from '../context/CartContext'
+import CategoryFilter from './CategoryFilter'
+import CartSummary from './CartSummary'
+import { loadBrowseState, saveBrowseState, type SortOrder } from '../utils/browseStorage'
+import { fetchBooksPage, fetchCategories } from "../api/booksApi"
 
-function BookList({ selectedCategories }: { selectedCategories: string[] }) {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [pageSize, setPageSize] = useState<number>(5);
-  const [pageNum, setPageNum] = useState<number>(1);
-  const [numBooks, setNumBooks] = useState<number>(0);
-  const [numPages, setNumPages] = useState<number>(0);
-  const [sortByName, setSortByName] = useState<boolean>(false);
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+function BookList() {
+  const saved = loadBrowseState()
+  const { addToCart } = useCart()
+
+  const [books, setBooks] = useState<Book[]>([])
+  const [categories, setCategories] = useState<string[]>([])
+  const [category, setCategory] = useState<string>(() => saved?.category ?? '')
+  const [pageSize, setPageSize] = useState<number>(() => saved?.pageSize ?? 5)
+  const [pageNum, setPageNum] = useState<number>(() => saved?.pageNum ?? 1)
+  const [totalItems, setTotalItems] = useState<number>(0)
+  const [totalPages, setTotalPages] = useState<number>(0)
+  const [sortOrder, setSortOrder] = useState<SortOrder>(() => saved?.sortOrder ?? 'asc')
 
   useEffect(() => {
-    const fetchBooks = async () => {
-      const categoryParams = selectedCategories
-        .map((c) => `bookTypes=${encodeURIComponent(c)}`)
-        .join('&');
+    saveBrowseState({ category, pageNum, pageSize, sortOrder })
+  }, [category, pageNum, pageSize, sortOrder])
 
-      const response = await fetch(
-        `https://localhost:5000/api/Book?cardsPerPage=${pageSize}&pageNum=${pageNum}&sortByName=${sortByName}${selectedCategories.length ? `&${categoryParams}` : ''}`
-      );
-      const data = await response.json();
-      setBooks(data.books);
-      setNumBooks(data.numBooks);
-      setNumPages(Math.ceil(numBooks / pageSize));
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await fetchCategories()
+        setCategories(data)
+      } catch {
+        console.error('Failed to fetch categories')
+        setCategories([])
+      }
+    }
 
-      console.log(`Response: ${response}`);
-      console.log(`Data: ${data}`);
-    };
+    loadCategories().catch(() => {
+      setCategories([])
+    })
+  }, [])
 
-    fetchBooks();
-  }, [pageSize, pageNum, numBooks, sortByName, selectedCategories]);
+  useEffect(() => {
+    const loadBooks = async () => {
+      const params = new URLSearchParams({
+        pageSize: String(pageSize),
+        pageNum: String(pageNum),
+        sortOrder,
+      })
+      if (category) {
+        params.set('category', category)
+      }
+
+      const data = await fetchBooksPage(params)
+      setBooks(data.books)
+      setTotalItems(data.totalNumBooks)
+    }
+
+    loadBooks().catch((error) => {
+      console.error(error)
+      setBooks([])
+      setTotalItems(0)
+    })
+  }, [pageSize, pageNum, sortOrder, category])
+
+  useEffect(() => {
+    setTotalPages(Math.ceil(totalItems / pageSize))
+  }, [totalItems, pageSize])
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(totalItems / pageSize) || 1)
+    setPageNum((current) => (current > maxPage ? maxPage : current))
+  }, [totalItems, pageSize])
+
+  const handleCategoryChange = (next: string) => {
+    setCategory(next)
+    setPageNum(1)
+  }
 
   return (
-    <>
-      <div>
-        <div className="checkbox-container">
-          <input
-            type="checkbox"
-            className="form-check-input"
-            id="sortByName"
-            checked={sortByName}
-            onChange={() => setSortByName(!sortByName)}
-          />
-          <label htmlFor="sortByName">Sort Alphabetically</label>
-        </div>
-
-        <div className="row g-3">
-          {books.map((b) => (
-            <div className="col-12" key={b.bookId}>
-              <div className="card h-100 shadow-sm">
-                <div className="card-body">
-                  <h5 className="card-title text-primary">{b.title}</h5>
-                  <ul className="list-group list-group-flush">
-                    <li className="list-group-item">
-                      <strong>Author:</strong> {b.author}
-                    </li>
-                    <li className="list-group-item">
-                      <strong>Publisher:</strong> {b.publisher}
-                    </li>
-                    <li className="list-group-item">
-                      <strong>ISBN:</strong> {b.isbn}
-                    </li>
-                    <li className="list-group-item">
-                      <strong>Classification:</strong> {b.classification}
-                    </li>
-                    <li className="list-group-item">
-                      <strong>Category:</strong> {b.category}
-                    </li>
-                    <li className="list-group-item">
-                      <strong>Pages:</strong> {b.pageCount}
-                    </li>
-                    <li className="list-group-item">
-                      <strong>Price:</strong> ${b.price}
-                    </li>
-                  </ul>
-
-                  <br />
-                  <button
-                    className="btn btn-success"
-                    onClick={() => {
-                      setSelectedBook(b);
-                      console.log(
-                        `Selected book set to ${b.bookId}: ${b.title}`
-                      );
-                    }}
-                  >
-                    Add to Cart
-                  </button>
-                  {selectedBook && (
-                    <AddToCartPopup
-                      onClose={() => setSelectedBook(null)}
-                      title={selectedBook.title}
-                      bookId={selectedBook.bookId}
-                      price={selectedBook.price}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <nav className="mt-4">
-          <ul className="pagination justify-content-center">
-            <li className={`page-item ${pageNum === 1 ? 'disabled' : ''}`}>
-              <button
-                className="page-link"
-                onClick={() => setPageNum(pageNum - 1)}
-              >
-                Previous
-              </button>
-            </li>
-            {[...Array(numPages)].map((_, index) => (
-              <li
-                key={index + 1}
-                className={`page-item ${pageNum === index + 1 ? 'active' : ''}`}
-              >
-                <button
-                  className="page-link"
-                  onClick={() => setPageNum(index + 1)}
-                >
-                  {index + 1}
-                </button>
-              </li>
-            ))}
-            <li
-              className={`page-item ${pageNum === numPages ? 'disabled' : ''}`}
-            >
-              <button
-                className="page-link"
-                onClick={() => setPageNum(pageNum + 1)}
-              >
-                Next
-              </button>
-            </li>
-          </ul>
-        </nav>
-
-        <div className="mt-3 text-center">
-          <label className="form-label me-2">Results per Page:</label>
-          <select
-            className="form-select d-inline-block w-auto"
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setPageNum(1);
-            }}
-          >
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-          </select>
+    <div className="container py-4">
+      <div className="row mb-4">
+        <div className="col">
+          <h1 className="mb-0">Online Bookstore</h1>
+          <p className="text-muted mb-0">Browse, filter, and add books to your cart.</p>
         </div>
       </div>
-    </>
-  );
+
+      <div className="row g-4">
+        <div className="col-lg-3">
+          <CategoryFilter
+            selectedCategories={[category]}
+            setSelectedCategories={(selected) => handleCategoryChange(selected[0] || '')}
+          />
+          <CartSummary />
+        </div>
+
+        <div className="col-lg-9">
+          <div className="row g-3 mb-3 align-items-end">
+            <div className="col-sm-6 col-md-4">
+              <label htmlFor="pageSize" className="form-label">
+                Books per page
+              </label>
+              <select
+                id="pageSize"
+                className="form-select"
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value))
+                  setPageNum(1)
+                }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={15}>15</option>
+                <option value={20}>20</option>
+              </select>
+            </div>
+
+            <div className="col-sm-6 col-md-4">
+              <label htmlFor="sortOrder" className="form-label">
+                Sort by title
+              </label>
+              <select
+                id="sortOrder"
+                className="form-select"
+                value={sortOrder}
+                onChange={(e) => {
+                  setSortOrder(e.target.value as SortOrder)
+                  setPageNum(1)
+                }}
+              >
+                <option value="asc">A-Z</option>
+                <option value="desc">Z-A</option>
+              </select>
+            </div>
+          </div>
+
+          <p className="text-muted">
+            Total books{category ? ' in this category' : ''}: {totalItems}
+          </p>
+
+          <div className="row g-3">
+            {books.map((book) => (
+              <div className="col-12 col-md-6" key={book.bookId}>
+                <div className="card h-100 shadow-sm">
+                  <div className="card-body d-flex flex-column">
+                    <h2 className="card-title h5">{book.title}</h2>
+                    <p className="card-text mb-1 small">
+                      <strong>Author:</strong> {book.author}
+                    </p>
+                    <p className="card-text mb-1 small">
+                      <strong>Publisher:</strong> {book.publisher}
+                    </p>
+                    <p className="card-text mb-1 small">
+                      <strong>ISBN:</strong> {book.isbn}
+                    </p>
+                    <p className="card-text mb-1 small">
+                      <strong>Classification:</strong> {book.classification}
+                    </p>
+                    <p className="card-text mb-1 small">
+                      <strong>Category:</strong> {book.category}
+                    </p>
+                    <p className="card-text mb-1 small">
+                      <strong>Pages:</strong> {book.pageCount}
+                    </p>
+                    <p className="card-text mb-3">
+                      <strong>Price:</strong> ${Number(book.price).toFixed(2)}
+                    </p>
+                    <button
+                      type="button"
+                      className="btn btn-primary mt-auto"
+                      onClick={() => addToCart({ ...book, bookId: Number(book.bookId), price: Number(book.price) })}
+                    >
+                      Add to cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="row mt-4">
+            <div className="col">
+              <div className="d-flex align-items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  className="btn btn-outline-primary"
+                  onClick={() => setPageNum((current) => current - 1)}
+                  disabled={pageNum === 1}
+                >
+                  Previous
+                </button>
+
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i + 1}
+                    type="button"
+                    className={`btn ${pageNum === i + 1 ? 'btn-primary' : 'btn-outline-primary'}`}
+                    onClick={() => setPageNum(i + 1)}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  className="btn btn-outline-primary"
+                  onClick={() => setPageNum((current) => current + 1)}
+                  disabled={pageNum === totalPages || totalPages === 0}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
-export default BookList;
+export default BookList

@@ -1,0 +1,10 @@
+.checkbox-container {
+  display: flex;
+  align-items: center; /* Vertically align checkbox and label */
+  align-items: center; /* Centers vertically */
+  text-align: center; /* Centers text inside the label */
+}
+
+.checkbox-container input {
+  margin-right: 8px; /* Adjust spacing between checkbox and label */
+}

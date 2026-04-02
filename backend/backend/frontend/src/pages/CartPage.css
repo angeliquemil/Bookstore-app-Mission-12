@@ -1,0 +1,40 @@
+.carousel-wrapper {
+  background-color: #f8f9fa; /* light gray background */
+  border: 1px solid #dee2e6;
+  position: relative;
+  padding: 20px;
+}
+
+.custom-carousel-button {
+  width: 3rem;
+  height: 50%rem;
+  background-color: rgba(200, 200, 200, 0.6);
+  border: none;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%; /* Align to center */
+  transform: translateY(-50%); /* Fix misalignment */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carousel-control-prev.custom-carousel-button {
+  top: 45%;
+  left: 0rem; /* Adjust left spacing */
+}
+
+.carousel-control-next.custom-carousel-button {
+  top: 45%;
+  right: 0rem; /* Adjust right spacing */
+}
+
+.custom-carousel-button:hover {
+  background-color: rgba(108, 117, 125, 0.9); /* darker gray on hover */
+}
+
+.custom-arrow {
+  color: #343a40; /* dark gray */
+  font-size: 1.5rem;
+  font-weight: bold;
+}
