@@ -1,58 +1,31 @@
-using Bookstore.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Books.API.Data;
 
-namespace Bookstore.Controllers
+namespace Books.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     public class BookController : ControllerBase
     {
         private BookDbContext _context;
-        public BookController(BookDbContext context)
+
+        public Book(BookControllerDbContext temp) => _context = temp;
+
+        [HttpGet("AllProjects")]
+        public IEnumerable<Project> GetProjects()
         {
-            _context = context;
+            var something = _context.Projects.ToList();
+
+            return something;
         }
 
-        [HttpGet(Name = "GetBooks")]
-        public IActionResult GetBooks(int cardsPerPage = 5, int pageNum = 1, bool sortByName = false,[FromQuery] List<string>? bookTypes = null)
+        [HttpGet("FunctionalProjects")]
+        public IEnumerable<Project> GetFunctionalProjects()
         {
-            var query = _context.Books.AsQueryable();
-
-            if (bookTypes != null && bookTypes.Any())
-            {
-                query = query.Where(b => bookTypes.Contains(b.Category));
-            }
-            
-            if (sortByName)
-            {
-                query = query.OrderBy(b => b.Title);
-            }
-            
-            var numBooks = query.Count();
-            var bookList = query
-                .Skip((pageNum - 1) * cardsPerPage)
-                .Take(cardsPerPage)
-                .ToList();
-
-            var booksData = new
-            {
-                Books = bookList,
-                NumBooks = numBooks,
-            };
-            
-            return Ok(booksData);
+            var something = _bookcontext.Projects.Where(p => p.ProjectFunctionalityStatus == "Functional").ToList();
+            return something;
         }
 
-        [HttpGet("GetBookCategories")]
-        public IActionResult GetProjectsTypes()
-        {
-            var projectTypes = _context.Books
-                .Select(x => x.Category)
-                .Distinct()
-                .ToList();
-            
-            return Ok(projectTypes);
-        }
     }
 }

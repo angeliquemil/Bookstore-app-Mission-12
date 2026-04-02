@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AddDbContext<BookDbContext>(options =>
+builder.Services.AddDbContext<BookstoreContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("BookstoreConnection")));
 
 builder.Services.AddCors(options =>
@@ -50,12 +50,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-internal class BookDbContext : DbContext
-{
-    public BookDbContext(DbContextOptions<BookDbContext> options) : base(options)
-    {
-    }
-
-    public object Books { get; internal set; }
-}
