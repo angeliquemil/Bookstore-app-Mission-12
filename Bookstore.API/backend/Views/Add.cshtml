@@ -1,0 +1,23 @@
+@model Book
+/*
+This view displays a form for adding a new book. It includes input fields for the title, author, genre, and year of the
+book. When the form is submitted, it sends a POST request to the Add action in the controller to create a new book
+record in the database.
+*/
+<h1>Add Book</h1>
+
+<form asp-action="Add" method="post">
+    <label>Title:</label>
+    <input asp-for="Title" />
+
+    <label>Author:</label>
+    <input asp-for="Author" />
+
+    <label>Genre:</label>
+    <input asp-for="Genre" />
+
+    <label>Year:</label>
+    <input asp-for="Year" />
+
+    <button type="submit">Add</button>
+</form>

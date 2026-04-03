@@ -1,0 +1,28 @@
+@model Book
+/*
+This view displays a form for editing an existing book. It pre-populates the input fields with the current values of the
+book's properties (title, author, genre, and year). When the form is submitted, it sends a POST request to the Edit
+action in the controller to update the book record in the database.
+*/
+
+<h1>Edit Book</h1>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="BookId" />
+
+    <label>Title:</label>
+    <input asp-for="Title" />
+
+    <label>Author:</label>
+    <input asp-for="Author" />
+
+    <label>Genre:</label>
+    <input asp-for="Genre" />
+
+    <label>Year:</label>
+    <input asp-for="Year" />
+
+    <button type="submit">Save Changes</button>
+</form>
+
+<a asp-action="Index">Back to List</a>

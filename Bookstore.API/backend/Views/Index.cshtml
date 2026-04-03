@@ -1,0 +1,30 @@
+@model IEnumerable<Book>
+/*
+This view displays a list of all books in the database. It shows the title and author of each book, along with Edit and
+Delete links for each book. The Edit link takes the user to the Edit view for that book, while the Delete link takes the
+user to the Delete confirmation page for that book. There is also a link at the top to add a new book, which takes the
+user to the Add view.
+*/
+<h1>Books</h1>
+
+<a asp-action="Add">Add New Book</a>
+
+<table>
+    <tr>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Actions</th>
+    </tr>
+
+    @foreach (var book in Model)
+    {
+        <tr>
+            <td>@book.Title</td>
+            <td>@book.Author</td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@book.BookId">Edit</a>
+                <a asp-action="Delete" asp-route-id="@book.BookId">Delete</a>
+            </td>
+        </tr>
+    }
+</table>
