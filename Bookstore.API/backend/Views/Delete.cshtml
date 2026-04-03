@@ -1,0 +1,22 @@
+@model Book
+/*
+This view displays a confirmation page for deleting a book. It shows the title and author of the book to be deleted and
+asks the user to confirm the deletion. If the user confirms, it submits a POST request to the Delete action with the
+BookId. If the user cancels, it redirects back to the Index view.
+*/
+
+<h1>Delete Book</h1>
+
+<h3>Are you sure you want to delete this book?</h3>
+
+<div>
+    <p><strong>Title:</strong> @Model.Title</p>
+    <p><strong>Author:</strong> @Model.Author</p>
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="BookId" />
+    <button type="submit">Delete</button>
+</form>
+
+<a asp-action="Index">Cancel</a>
