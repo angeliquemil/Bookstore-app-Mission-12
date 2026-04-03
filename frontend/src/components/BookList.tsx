@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react'
 import type { Book } from '../types/Book'
 import { useCart } from '../context/CartContext'
-import CategoryFilter from './CategoryFilter'
-import CartSummary from './CartSummary'
 import { loadBrowseState, saveBrowseState, type SortOrder } from '../utils/browseStorage'
-import { fetchBooksPage, fetchCategories } from "../api/booksApi"
+import { fetchBooksPage } from "../api/booksApi"
 
-function BookList() {
+interface BookListProps {
+  selectedCategories: string[];
+}
+
+function BookList({ selectedCategories }: BookListProps) {
   const saved = loadBrowseState()
   const { addToCart } = useCart()
 
   const [books, setBooks] = useState<Book[]>([])
-  const [categories, setCategories] = useState<string[]>([])
-  const [category, setCategory] = useState<string>(() => saved?.category ?? '')
   const [pageSize, setPageSize] = useState<number>(() => saved?.pageSize ?? 5)
   const [pageNum, setPageNum] = useState<number>(() => saved?.pageNum ?? 1)
   const [totalItems, setTotalItems] = useState<number>(0)
@@ -20,24 +20,8 @@ function BookList() {
   const [sortOrder, setSortOrder] = useState<SortOrder>(() => saved?.sortOrder ?? 'asc')
 
   useEffect(() => {
-    saveBrowseState({ category, pageNum, pageSize, sortOrder })
-  }, [category, pageNum, pageSize, sortOrder])
-
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await fetchCategories()
-        setCategories(data)
-      } catch {
-        console.error('Failed to fetch categories')
-        setCategories([])
-      }
-    }
-
-    loadCategories().catch(() => {
-      setCategories([])
-    })
-  }, [])
+    saveBrowseState({ category: selectedCategories.join(','), pageNum, pageSize, sortOrder })
+  }, [selectedCategories, pageNum, pageSize, sortOrder])
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -46,8 +30,8 @@ function BookList() {
         pageNum: String(pageNum),
         sortOrder,
       })
-      if (category) {
-        params.set('category', category)
+      if (selectedCategories.length > 0) {
+        params.set('category', selectedCategories[0])
       }
 
       const data = await fetchBooksPage(params)
@@ -60,7 +44,7 @@ function BookList() {
       setBooks([])
       setTotalItems(0)
     })
-  }, [pageSize, pageNum, sortOrder, category])
+  }, [pageSize, pageNum, sortOrder, selectedCategories])
 
   useEffect(() => {
     setTotalPages(Math.ceil(totalItems / pageSize))
@@ -70,11 +54,6 @@ function BookList() {
     const maxPage = Math.max(1, Math.ceil(totalItems / pageSize) || 1)
     setPageNum((current) => (current > maxPage ? maxPage : current))
   }, [totalItems, pageSize])
-
-  const handleCategoryChange = (next: string) => {
-    setCategory(next)
-    setPageNum(1)
-  }
 
   return (
     <div className="container py-4">
@@ -86,15 +65,7 @@ function BookList() {
       </div>
 
       <div className="row g-4">
-        <div className="col-lg-3">
-          <CategoryFilter
-            selectedCategories={[category]}
-            setSelectedCategories={(selected) => handleCategoryChange(selected[0] || '')}
-          />
-          <CartSummary />
-        </div>
-
-        <div className="col-lg-9">
+        <div className="col-lg-12">
           <div className="row g-3 mb-3 align-items-end">
             <div className="col-sm-6 col-md-4">
               <label htmlFor="pageSize" className="form-label">
