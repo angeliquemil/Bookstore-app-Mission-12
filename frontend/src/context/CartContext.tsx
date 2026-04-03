@@ -1,59 +1,99 @@
-import { createContext, ReactNode, useContext, useState } from 'react';
-import { CartItem } from '../types/CartItem';
+// CartContext.tsx
+// Provides global cart state and functions to manipulate the cart
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+// Represents an item in the cart
+export interface CartItem {
+  bookID: number;
+  title: string;
+  price: number;
+  quantity: number;
+}
+// Defines the context type
 interface CartContextType {
-  cart: CartItem[];
-  addToCart: (item: CartItem) => void;
-  removeFromCart: (bookId: number) => void;
+  cartItems: CartItem[];
+  addToCart: (book: { bookID: number; title: string; price: number }) => void;
+  removeFromCart: (bookID: number) => void;
+  updateQuantity: (bookID: number, quantity: number) => void;
   clearCart: () => void;
+  cartTotal: number;
+  cartCount: number;
 }
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+const CartContext = createContext<CartContextType | null>(null);
 
-export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const [cart, setCart] = useState<CartItem[]>([]);
+const SESSION_KEY = 'bookstore_cart';
 
-  const addToCart = (item: CartItem) => {
-    setCart((prevCart) => {
-      // Does the item exist in the cart already
-      const existingItem = prevCart.find((cI) => cI.bookId === item.bookId);
+export function CartProvider({ children }: { children: ReactNode }) {
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    const stored = sessionStorage.getItem(SESSION_KEY);
+    return stored ? JSON.parse(stored) : [];
+  });
 
-      // If so, update the price, otherwise do nothing
-      const updatedCart = prevCart.map((c) =>
-        c.bookId === item.bookId
-          ? { ...c, donationAmount: c.price + item.price }
-          : c
-      );
+  useEffect(() => {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(cartItems));
+  }, [cartItems]);
 
-      // return the updated cart
-      // updates include:
-      // new donationAmount, new item
-      return existingItem ? updatedCart : [...prevCart, item];
+  function addToCart(book: { bookID: number; title: string; price: number }) {
+    setCartItems((prev) => {
+      const existing = prev.find((item) => item.bookID === book.bookID);
+      if (existing) {
+        return prev.map((item) =>
+          item.bookID === book.bookID
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prev, { ...book, quantity: 1 }];
     });
-  };
+  }
+  //Removing from the cart by filtering out the item with the specified bookID
+  function removeFromCart(bookID: number) {
+    setCartItems((prev) => prev.filter((item) => item.bookID !== bookID));
+  }
+  //Updating the quantity of a cart item. If the quantity is less than 1, it removes the item from the cart
+  function updateQuantity(bookID: number, quantity: number) {
+    if (quantity < 1) {
+      removeFromCart(bookID);
+      return;
+    }
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.bookID === bookID ? { ...item, quantity } : item
+      )
+    );
+  }
+  //Clears the cart by setting the cartItems state to an empty array
+  function clearCart() {
+    setCartItems([]);
+  }
 
-  const removeFromCart = (bookId: number) => {
-    setCart((prevCart) => prevCart.filter((c) => c.bookId !== bookId));
-  };
+  const cartTotal = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
 
-  const clearCart = () => {
-    setCart([]);
-  };
-
+  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  //Provides the cart context to its children components, allowing them to access and manipulate the cart state
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, removeFromCart, clearCart }}
+      value={{
+        cartItems,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        cartTotal,
+        cartCount,
+      }}
     >
       {children}
     </CartContext.Provider>
   );
-};
+}
 
-export const useCart = () => {
-  const context = useContext(CartContext);
-
-  if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
-  return context;
-};
+export function useCart() {
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error('useCart must be used within CartProvider');
+  return ctx;
+}
