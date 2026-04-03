@@ -107,7 +107,7 @@ function BookList({ selectedCategories }: BookListProps) {
           </div>
 
           <p className="text-muted">
-            Total books{category ? ' in this category' : ''}: {totalItems}
+            Total books{selectedCategories.length > 0 ? ' in selected categories' : ''}: {totalItems}
           </p>
 
           <div className="row g-3">
