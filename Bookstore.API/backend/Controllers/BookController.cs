@@ -1,30 +1,30 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Books.API.Data;
+using BookstoreApi.Data;
+using BookstoreApi.Models;
 
-namespace Books.API.Controllers
+namespace BookstoreApi.Controllers
 {
-    [Route("[controller]")]
-    [ApiController]
-    public class BookController : ControllerBase
+    [Route("Book")]
+    public class BookController : Controller
     {
         private BookDbContext _context;
 
-        public Book(BookControllerDbContext temp) => _context = temp;
+        public BookController(BookDbContext context) => _context = context;
 
-        [HttpGet("AllProjects")]
-        public IEnumerable<Project> GetProjects()
+        [HttpGet("AllBooks")]
+        public IEnumerable<Book> GetBooks()
         {
-            var something = _context.Projects.ToList();
+            var books = _context.Books.ToList();
 
-            return something;
+            return books;
         }
 
-        [HttpGet("FunctionalProjects")]
-        public IEnumerable<Project> GetFunctionalProjects()
+        [HttpGet("FunctionalBooks")]
+        public IEnumerable<Book> GetFunctionalBooks()
         {
-            var something = _bookcontext.Projects.Where(p => p.ProjectFunctionalityStatus == "Functional").ToList();
-            return something;
+            var books = _context.Books.Where(b => b.Title != null).ToList(); // Adjust condition as needed
+            return books;
         }
 
 

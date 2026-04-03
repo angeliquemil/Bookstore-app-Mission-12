@@ -1,7 +1,7 @@
 import type { Book } from '../types/Book'
 
 export const BOOKS_API_BASE =
-    import.meta.env.VITE_API_BASE_URL ?? 'https://localhost:5000/api/books'
+    import.meta.env.VITE_API_BASE_URL ?? 'https://bookstore-app-backend-hrdsdxbdg8bfarh0.francecentral-01.azurewebsites.net'
 
 export interface BooksPageResponse {
     books: Book[]
